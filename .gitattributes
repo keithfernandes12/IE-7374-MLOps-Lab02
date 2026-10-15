@@ -1,0 +1,5 @@
+# The boot script runs on Linux; CRLF line endings would break bash
+*.sh     text eol=lf
+*.tftpl  text eol=lf
+*.tf     text eol=lf
+*.hcl    text eol=lf

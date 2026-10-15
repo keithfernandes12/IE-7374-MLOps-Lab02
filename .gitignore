@@ -1,0 +1,24 @@
+# Terraform provider plugins (the AWS provider binary alone is ~850 MB)
+**/.terraform/
+
+# State can contain resource IDs, IPs and secrets
+*.tfstate
+*.tfstate.*
+
+# Crash logs and local overrides
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Variable files often hold credentials
+*.tfvars
+*.tfvars.json
+
+# CLI config
+.terraformrc
+terraform.rc
+
+# Keep .terraform.lock.hcl committed (pins provider versions)

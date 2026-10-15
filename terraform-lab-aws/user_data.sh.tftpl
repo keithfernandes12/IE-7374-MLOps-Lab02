@@ -1,0 +1,23 @@
+#!/bin/bash
+# Runs once at first boot. Output lands in the EC2 console log, so you can check it with:
+#   aws ec2 get-console-output --instance-id <id> --latest --output text
+
+snap install aws-cli --classic
+
+# Read test: the instance role allows GetObject, so this should succeed.
+# Retry because a new IAM instance profile can take a few seconds to become usable.
+for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    if aws s3 cp "s3://${bucket}/${model_key}" /opt/model.json --region "${region}"; then
+        echo "ARTIFACT_PULL_OK: $(cat /opt/model.json)"
+        break
+    fi
+    echo "Download attempt $attempt failed, retrying in 10s"
+    sleep 10
+done
+
+# Write test: the role is read-only, so this should be denied.
+if aws s3 cp /opt/model.json "s3://${bucket}/models/tampered.json" --region "${region}"; then
+    echo "WRITE_ALLOWED: unexpected, check the IAM policy"
+else
+    echo "WRITE_DENIED: expected, the instance role is read-only"
+fi
