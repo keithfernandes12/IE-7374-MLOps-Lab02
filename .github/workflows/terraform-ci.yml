@@ -1,0 +1,60 @@
+name: Terraform CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform-lab-aws/**"
+      - ".github/workflows/terraform-ci.yml"
+  pull_request:
+    paths:
+      - "terraform-lab-aws/**"
+      - ".github/workflows/terraform-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Format, validate and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform-lab-aws
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform-plugin-cache
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+
+      - name: Create plugin cache directory
+        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+
+      # The AWS provider is a large download, so reuse it between runs
+      - name: Cache provider plugins
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: terraform-plugins-${{ runner.os }}-${{ hashFiles('terraform-lab-aws/.terraform.lock.hcl') }}
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff
+
+      - name: terraform init
+        run: terraform init -input=false
+
+      - name: terraform validate
+        run: terraform validate
+
+      # Tests use a mocked AWS provider: no credentials, no real resources
+      - name: terraform test
+        run: terraform test
